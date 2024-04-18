@@ -45,10 +45,12 @@ TODO:
   - создайте файл `main/include/secrets.h` со следующим содержанием:
     ```c
     #pragma once
-    #define WIFI_SSID "название сети"
-    #define WIFI_PASS "пароль сети"
-    #define HASS_KEY  "ключ API HomeAssistant"
-    #define REPL_PASS "пароль от REPL"
+    #define WIFI_SSID  "название сети"
+    #define WIFI_PASS  "пароль сети"
+    #define HASS_KEY   "ключ API HomeAssistant"
+    #define REPL_PASS  "пароль от REPL"
+    #define TG_KEY     "ключ API Telegram"
+    #define TG_CHAT_ID -123456789
     ```
   - получите ключи шифрования:
     - если собираете новое устройство, сгенерируйте ключи:
