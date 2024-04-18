@@ -21,7 +21,6 @@ QueueHandle_t scan_queue;
 static nvs_handle_t auth_nvs_handle;
 static int64_t auth_last_repl_logon = -REPL_LOGON_TIMEOUT;
 
-static const char* gendered_verb_table[] = { "%D0%B2%D0%BE%D1%88%D1%91%D0%BB", "%D0%B2%D0%BE%D1%88%D0%BB%D0%BE", "%D0%B2%D0%BE%D1%88%D0%BB%D0%B0", "%D0%B2%D0%BE%D1%88%D0%BB%D0%B8" };
 static const char* gender_table[] = { "m", "n", "f", "nb" };
 
 static esp_err_t _auth_repl_logon() {
@@ -254,18 +253,27 @@ void auth_task(void* _arg) {
         esp_err_t err = _auth_fetch_info(credential, &info);
 
         if(err == ESP_OK) {
-            ESP_LOGI(TAG, "@%s %s", info.tg_username, gendered_verb_table[info.gender]);
+            ESP_LOGI(TAG, "@%s", info.tg_username);
+
+            // send notifications
+            http_message_t msg = {
+                .type = http_message_type_entry,
+                .gender = info.gender,
+            };
+            strcpy(msg.username, info.tg_username);
+            xQueueSend(http_queue, &msg, portMAX_DELAY);
 
             // open door
             gpio_set_level(DOOR_RELAY, 1);
             vTaskDelay(OPEN_DOOR_FOR);
             gpio_set_level(DOOR_RELAY, 0);
-
-            // send notifications
-            ESP_ERROR_CHECK(http_hass_log_entry(info.tg_username));
-            ESP_ERROR_CHECK(http_tg_log_entry(info.tg_username, gendered_verb_table[info.gender]));
         } else if(err == ESP_ERR_NVS_NOT_FOUND) {
-            // unknown credential
+            // unknown credential: send notifications
+            http_message_t msg = {
+                .type = http_message_type_fail,
+            };
+            strcpy(msg.username, credential);
+            xQueueSend(http_queue, &msg, portMAX_DELAY);
         } else {
             ESP_ERROR_CHECK(err);
         }

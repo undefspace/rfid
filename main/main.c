@@ -17,6 +17,7 @@
 #include "auth.h"
 #include "secrets.h"
 #include "config.h"
+#include "http.h"
 
 // declarations
 void app_main(void);
@@ -144,12 +145,12 @@ void app_main(void) {
     esp_sntp_config_t sntp_config = ESP_NETIF_SNTP_DEFAULT_CONFIG(NTP_SERVER);
     esp_netif_sntp_init(&sntp_config);
 
-    // set up auth
-    auth_init();
-
     // start tasks
-    xTaskCreate(&nfc_task, "nfc", 4096, NULL, 4, NULL);
-    xTaskCreate(&auth_task, "auth", 4096, NULL, 5, NULL);
+    auth_init();
+    http_init();
+    xTaskCreate(&nfc_task, "nfc", 2048, NULL, 4, NULL);
+    xTaskCreate(&auth_task, "auth", 2048, NULL, 4, NULL);
+    xTaskCreate(&http_task, "http", 4096, NULL, 4, NULL);
 
     // ESP_ERROR_CHECK(esp_ota_mark_app_valid_cancel_rollback());
 }
