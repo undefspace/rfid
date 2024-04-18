@@ -1,3 +1,4 @@
 idf_component_register(
-    SRCS "hass.c" "pn532.c" "main.c" "auth.c" "hass.c"
-    INCLUDE_DIRS "include/")
+    SRCS "http.c" "pn532.c" "main.c" "auth.c" "http.c"
+    INCLUDE_DIRS "include/"
+    EMBED_TXTFILES "tg_api_root.pem")

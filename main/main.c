@@ -11,6 +11,7 @@
 #include <esp_timer.h>
 #include <driver/gpio.h>
 #include <driver/spi_master.h>
+// #include <esp_ota_ops.h>
 
 #include "pn532.h"
 #include "auth.h"
@@ -149,4 +150,6 @@ void app_main(void) {
     // start tasks
     xTaskCreate(&nfc_task, "nfc", 4096, NULL, 4, NULL);
     xTaskCreate(&auth_task, "auth", 4096, NULL, 5, NULL);
+
+    // ESP_ERROR_CHECK(esp_ota_mark_app_valid_cancel_rollback());
 }

@@ -56,7 +56,6 @@ TODO:
       `espsecure.py generate_signing_key --version 1 signing_key.pem`
     - если работаете с уже собранным устройством, получите их от админов и
       поместите в корень проекта (файлы `flash_key.bin` и `signing_key.pem`)
-  - соберите проект: `idf.py build`
-  - загрузите прошивку:
-    - в самый первый раз: `idf.py flash monitor`
+  - соберите проект и загрузите прошивку:
+    - в самый первый раз: `idf.py build flash monitor`
     - в последующие разы, в т.ч. для уже собранного устройства: `./flash.sh`
