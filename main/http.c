@@ -9,7 +9,7 @@
 #include "secrets.h"
 #include "config.h"
 
-#define TAG "hass"
+#define TAG "http"
 
 // urlencoded string constants
 #define ENTRY_ATTEMPT "%D0%9F%D0%BE%D0%BF%D1%8B%D1%82%D0%BA%D0%B0%20%D0%B2%D1%85%D0%BE%D0%B4%D0%B0%3A%20" // "Попытка входа: "
