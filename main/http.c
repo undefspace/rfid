@@ -3,6 +3,7 @@
 #include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
+#include <esp_random.h>
 
 #include "common.h"
 #include "http.h"
@@ -22,6 +23,25 @@ static const char* gendered_verb_table[] = {
     "%D0%B2%D0%BE%D1%88%D0%BB%D0%B0", // вошла
     "%D0%B2%D0%BE%D1%88%D0%BB%D0%B8", // вошли
 };
+static const char* entry_emoji[] = {
+    "%F0%9F%91%8B", // 👋
+    "%F0%9F%91%80", // 👀
+    "%F0%9F%98%B3", // 😳
+    "%F0%9F%A4%AD", // 🤭
+    "%F0%9F%98%B0", // 😰
+    "%F0%9F%99%82", // 🙂
+    "%E2%9D%A4%EF%B8%8F", // ❤️
+};
+#define ENTRY_EMOJIS (sizeof(entry_emoji) / sizeof(char*))
+static const char* refusal_emoji[] = {
+    "%F0%9F%A4%AC", // 🤬
+    "%F0%9F%98%A4", // 😤
+    "%F0%9F%A7%90", // 🧐
+    "%F0%9F%A4%A8", // 🤨
+    "%F0%9F%A4%9B", // 🤛
+    "%F0%9F%96%95", // 🖕
+};
+#define REFUSAL_EMOJIS (sizeof(refusal_emoji) / sizeof(char*))
 
 QueueHandle_t http_queue;
 
@@ -60,11 +80,12 @@ static esp_err_t _http_tg_log_entry(http_message_t* msg) {
     char path[100], query[300];
     sprintf(path, "/bot%s/sendMessage", TG_KEY);
     if(msg->type == http_message_type_entry)
-        sprintf(query, "chat_id=%s&parse_mode=MarkdownV2&text=%%5B%%40%s%%5D%%28t.me%%2F%s%%29%%20%s%s",
-            TG_CHAT_ID, msg->username, msg->username, gendered_verb_table[msg->gender], TO_SPACE);
+        sprintf(query, "chat_id=%s&parse_mode=MarkdownV2&text=%%5B%%40%s%%5D%%28t.me%%2F%s%%29%%20%s%s%%20%s",
+            TG_CHAT_ID, msg->username, msg->username, gendered_verb_table[msg->gender], TO_SPACE,
+            entry_emoji[esp_random() % ENTRY_EMOJIS]);
     else
-        sprintf(query, "chat_id=%s&parse_mode=MarkdownV2&text=%s%s",
-            TG_CHAT_ID, ENTRY_ATTEMPT, msg->username); // msg->username contains the unauthorized credential
+        sprintf(query, "chat_id=%s&parse_mode=MarkdownV2&text=%s%s%%20%s",
+            TG_CHAT_ID, ENTRY_ATTEMPT, msg->username, refusal_emoji[esp_random() % REFUSAL_EMOJIS]); // msg->username contains the unauthorized credential
 
     // configure HTTP client
     esp_http_client_config_t config = {
