@@ -60,10 +60,10 @@ static esp_err_t _http_tg_log_entry(http_message_t* msg) {
     char path[100], query[300];
     sprintf(path, "/bot%s/sendMessage", TG_KEY);
     if(msg->type == http_message_type_entry)
-        sprintf(query, "chat_id=%lld&parse_mode=MarkdownV2&text=%%5B%%40%s%%5D%%28t.me%%2F%s%%29%%20%s%s",
+        sprintf(query, "chat_id=%s&parse_mode=MarkdownV2&text=%%5B%%40%s%%5D%%28t.me%%2F%s%%29%%20%s%s",
             TG_CHAT_ID, msg->username, msg->username, gendered_verb_table[msg->gender], TO_SPACE);
     else
-        sprintf(query, "chat_id=%lld&parse_mode=MarkdownV2&text=%s%s",
+        sprintf(query, "chat_id=%s&parse_mode=MarkdownV2&text=%s%s",
             TG_CHAT_ID, ENTRY_ATTEMPT, msg->username); // msg->username contains the unauthorized credential
 
     // configure HTTP client

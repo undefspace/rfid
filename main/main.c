@@ -11,7 +11,6 @@
 #include <esp_timer.h>
 #include <driver/gpio.h>
 #include <driver/spi_master.h>
-// #include <esp_ota_ops.h>
 
 #include "pn532.h"
 #include "auth.h"
@@ -152,5 +151,11 @@ void app_main(void) {
     xTaskCreate(&auth_task, "auth", 2048, NULL, 4, NULL);
     xTaskCreate(&http_task, "http", 4096, NULL, 4, NULL);
 
-    // ESP_ERROR_CHECK(esp_ota_mark_app_valid_cancel_rollback());
+    // print RSSI every minute
+    while(1) {
+        wifi_ap_record_t ap;
+        esp_wifi_sta_get_ap_info(&ap);
+        ESP_LOGI(TAG, "RSSI: %d dBm", ap.rssi);
+        vTaskDelay(60000 / portTICK_PERIOD_MS);
+    }
 }
