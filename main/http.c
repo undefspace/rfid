@@ -93,8 +93,16 @@ void http_task(void* _arg) {
             continue;
 
         // send HTTP requests
-        _http_hass_log_entry(&msg);
-        _http_tg_log_entry(&msg);
+        for(int i = 0; i < HTTP_TRIES; i++) {
+            ESP_LOGI(TAG, "hass: attempt %d", i + 1);
+            if(_http_hass_log_entry(&msg) == ESP_OK)
+                break;
+        }
+        for(int i = 0; i < HTTP_TRIES; i++) {
+            ESP_LOGI(TAG, "tg: attempt %d", i + 1);
+            if(_http_tg_log_entry(&msg) == ESP_OK)
+                break;
+        }
     }
 }
 

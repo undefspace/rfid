@@ -15,3 +15,4 @@
 #define SCAN_TIMEOUT       (5 * 1000 * 1000) // uS
 #define REPL_LOGON_TIMEOUT (5 * 60 * 1000 * 1000) // uS
 #define OPEN_DOOR_FOR      (5000 / portTICK_PERIOD_MS)
+#define HTTP_TRIES         3
