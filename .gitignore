@@ -7,3 +7,4 @@ main/include/secrets.h
 /bracket.gcode
 /flash_key.bin
 /signing_key.pem
+/bot_logo.png
