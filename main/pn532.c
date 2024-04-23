@@ -49,23 +49,27 @@ static bool pn532_waitready(pn532_t *obj, uint16_t timeout);
 static void pn532_spi_write(pn532_t *obj, uint8_t c);
 static uint8_t pn532_spi_read(pn532_t *obj);
 
-void pn532_spi_init(pn532_t *obj, uint8_t clk, uint8_t miso, uint8_t mosi, uint8_t ss)
+void pn532_spi_init(pn532_t *obj, uint8_t clk, uint8_t miso, uint8_t mosi, uint8_t ss, uint8_t rst)
 {
     obj->_clk = clk;
     obj->_miso = miso;
     obj->_mosi = mosi;
     obj->_ss = ss;
+    obj->_rst = rst;
 
     esp_rom_gpio_pad_select_gpio(obj->_clk);
     esp_rom_gpio_pad_select_gpio(obj->_miso);
     esp_rom_gpio_pad_select_gpio(obj->_mosi);
     esp_rom_gpio_pad_select_gpio(obj->_ss);
+    esp_rom_gpio_pad_select_gpio(obj->_rst);
 
     gpio_set_direction(obj->_ss, GPIO_MODE_OUTPUT);
     gpio_set_level(obj->_ss, 1);
     gpio_set_direction(obj->_clk, GPIO_MODE_OUTPUT);
     gpio_set_direction(obj->_mosi, GPIO_MODE_OUTPUT);
     gpio_set_direction(obj->_miso, GPIO_MODE_INPUT);
+    gpio_set_direction(obj->_rst, GPIO_MODE_OUTPUT);
+    gpio_set_level(obj->_rst, 1);
 }
 
 /**************************************************************************/
@@ -75,6 +79,10 @@ void pn532_spi_init(pn532_t *obj, uint8_t clk, uint8_t miso, uint8_t mosi, uint8
 /**************************************************************************/
 void pn532_begin(pn532_t *obj)
 {
+    gpio_set_level(obj->_rst, 0);
+    PN532_DELAY(100);
+    gpio_set_level(obj->_rst, 1);
+
     gpio_set_level(obj->_ss, 0);
 
     PN532_DELAY(1000);

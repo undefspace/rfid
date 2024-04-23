@@ -39,37 +39,42 @@ void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id
         esp_wifi_connect();
 
     if(event_id == WIFI_EVENT_STA_CONNECTED)
-        ESP_LOGI(TAG, "wifi connected");
+        ESP_LOGD(TAG, "wifi connected");
     else if(event_id == WIFI_EVENT_STA_DISCONNECTED)
-        ESP_LOGI(TAG, "wifi disconnected");
+        ESP_LOGD(TAG, "wifi disconnected");
 }
 
 void nfc_task(void* _arg){
-    // initialize PN532
+    // we need to hard reset and re-initialize the PN532 every few hours
+    // because its firmware is quite buggy
+    // (just google "PN532 stops working after a few hours")
+    time_t last_restart = -NFC_REINIT_PERIOD;
     pn532_t nfc;
-    pn532_spi_init(&nfc, PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
-    pn532_begin(&nfc);
+    pn532_spi_init(&nfc, PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS, PN532_RST);
 
-    // print firmware version
-    uint32_t version = pn532_getFirmwareVersion(&nfc);
-    if (!version) {
-        ESP_LOGI(TAG, "Didn't find PN53x board");
-        while (1) {
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
-        }
-    }
-    ESP_LOGI(TAG, "Found chip PN5%x", (version >> 24) & 0xFF);
-    ESP_LOGI(TAG, "Firmware ver. %d.%d", (version >> 16) & 0xFF, (version >> 8) & 0xFF);
-
-    // initialize secure access module
-    pn532_SAMConfig(&nfc);
-
-    // scan cards
+    // main loop
     uint8_t data_buf[16] = {0};
     uint8_t uid_len;
     char credential[SCAN_CRED_SIZE];
-    while (1) {
-        uint8_t success = pn532_readPassiveTargetID(&nfc, PN532_MIFARE_ISO14443A, data_buf, &uid_len, 0);
+    while(1) {
+        // (re-)init
+        if(esp_timer_get_time() - last_restart >= NFC_REINIT_PERIOD) {
+            ESP_LOGD(TAG, "initializing PN532");
+            pn532_begin(&nfc);
+            uint32_t version = pn532_getFirmwareVersion(&nfc);
+            if (!version) {
+                ESP_LOGE(TAG, "failed to communicate with PN532. retrying in 5s");
+                vTaskDelay(5000 / portTICK_PERIOD_MS);
+                continue;
+            }
+            ESP_LOGD(TAG, "found PN5%x", (version >> 24) & 0xFF);
+            ESP_LOGD(TAG, "firmware ver. %d.%d", (version >> 16) & 0xFF, (version >> 8) & 0xFF);
+            pn532_SAMConfig(&nfc);
+            last_restart = esp_timer_get_time();
+        }
+
+        // scan card
+        uint8_t success = pn532_readPassiveTargetID(&nfc, PN532_MIFARE_ISO14443A, data_buf, &uid_len, 100);
         if(!success)
             continue;
 
@@ -155,7 +160,7 @@ void app_main(void) {
     while(1) {
         wifi_ap_record_t ap;
         esp_wifi_sta_get_ap_info(&ap);
-        ESP_LOGI(TAG, "RSSI: %d dBm", ap.rssi);
+        ESP_LOGD(TAG, "RSSI: %d dBm", ap.rssi);
         vTaskDelay(60000 / portTICK_PERIOD_MS);
     }
 }
