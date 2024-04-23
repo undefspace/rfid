@@ -139,9 +139,9 @@ static esp_err_t _auth_repl_list(int argc, char** argv) {
     EARLY_ERR_RETURN(_auth_repl_logon());
 
     // print table header
-    ESP_LOGI(TAG, "+-----------------+--------------------------------+--------+");
-    ESP_LOGI(TAG, "| %-15s | %-30s | %-6s |", "credential", "tg_username", "gender");
-    ESP_LOGI(TAG, "+-----------------+--------------------------------+--------+");
+    printf("+-----------------+--------------------------------+--------+\n");
+    printf("| %-15s | %-30s | %-6s |\n", "credential", "tg_username", "gender");
+    printf("+-----------------+--------------------------------+--------+\n");
 
     // iterate over entries
     nvs_iterator_t iter;
@@ -160,7 +160,7 @@ static esp_err_t _auth_repl_list(int argc, char** argv) {
         EARLY_ERR_RETURN(_auth_fetch_info(entry.key, &info));
 
         // print row
-        ESP_LOGI(TAG, "| %-15s | %-30s | %-6s |", entry.key, info.tg_username, gender_table[info.gender]);
+        printf("| %-15s | %-30s | %-6s |\n", entry.key, info.tg_username, gender_table[info.gender]);
         entries++;
 
         next:
@@ -173,8 +173,8 @@ static esp_err_t _auth_repl_list(int argc, char** argv) {
         EARLY_ERR_RETURN(err);
 
     // print table footer
-    ESP_LOGI(TAG, "+-----------------+--------------------------------+--------+");
-    ESP_LOGI(TAG, "<%d entries>", entries);
+    printf("+-----------------+--------------------------------+--------+\n");
+    printf("<%d entries>\n", entries);
     return ESP_OK;
 }
 
@@ -246,14 +246,14 @@ void auth_task(void* _arg) {
             continue;
 
         // print credential
-        ESP_LOGI(TAG, "scanned credential: %s", credential);
+        ESP_LOGD(TAG, "scanned credential: %s", credential);
 
         // get data from NVS
         auth_info_t info;
         esp_err_t err = _auth_fetch_info(credential, &info);
 
         if(err == ESP_OK) {
-            ESP_LOGI(TAG, "@%s", info.tg_username);
+            ESP_LOGD(TAG, "@%s", info.tg_username);
 
             // send notifications
             http_message_t msg = {

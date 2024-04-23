@@ -70,7 +70,7 @@ static esp_err_t _http_hass_log_entry(http_message_t* msg) {
 
     // perform request
     EARLY_ERR_RETURN(esp_http_client_perform(client));
-    ESP_LOGI(TAG, "hass http status: %d", esp_http_client_get_status_code(client));
+    ESP_LOGD(TAG, "hass http status: %d", esp_http_client_get_status_code(client));
     EARLY_ERR_RETURN(esp_http_client_cleanup(client));
     return ESP_OK;
 }
@@ -101,7 +101,7 @@ static esp_err_t _http_tg_log_entry(http_message_t* msg) {
 
     // perform request
     EARLY_ERR_RETURN(esp_http_client_perform(client));
-    ESP_LOGI(TAG, "tg http status: %d", esp_http_client_get_status_code(client));
+    ESP_LOGD(TAG, "tg http status: %d", esp_http_client_get_status_code(client));
     EARLY_ERR_RETURN(esp_http_client_cleanup(client));
     return ESP_OK;
 }
@@ -115,12 +115,12 @@ void http_task(void* _arg) {
 
         // send HTTP requests
         for(int i = 0; i < HTTP_TRIES; i++) {
-            ESP_LOGI(TAG, "hass: attempt %d", i + 1);
+            ESP_LOGD(TAG, "hass: attempt %d", i + 1);
             if(_http_hass_log_entry(&msg) == ESP_OK)
                 break;
         }
         for(int i = 0; i < HTTP_TRIES; i++) {
-            ESP_LOGI(TAG, "tg: attempt %d", i + 1);
+            ESP_LOGD(TAG, "tg: attempt %d", i + 1);
             if(_http_tg_log_entry(&msg) == ESP_OK)
                 break;
         }
