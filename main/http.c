@@ -80,11 +80,11 @@ static esp_err_t _http_tg_log_entry(http_message_t* msg) {
     char path[100], query[300];
     sprintf(path, "/bot%s/sendMessage", TG_KEY);
     if(msg->type == http_message_type_entry)
-        sprintf(query, "chat_id=%s&parse_mode=HTML&text=%%3Ca%%20href%%3D%%22t.me%%2F%s%%22%%3E%s%%3C%%2Fa%%3E%%20%s%s%%20%s",
+        sprintf(query, "chat_id=%s&disable_web_page_preview=true&parse_mode=HTML&text=%%3Ca%%20href%%3D%%22t.me%%2F%s%%22%%3E%s%%3C%%2Fa%%3E%%20%s%s%%20%s",
             TG_CHAT_ID, msg->username, msg->username, gendered_verb_table[msg->gender], TO_SPACE,
             entry_emoji[esp_random() % ENTRY_EMOJIS]);
     else
-        sprintf(query, "chat_id=%s&parse_mode=MarkdownV2&text=%s%s%%20%s",
+        sprintf(query, "chat_id=%s&disable_web_page_preview=true&parse_mode=MarkdownV2&text=%s%s%%20%s",
             TG_CHAT_ID, ENTRY_ATTEMPT, msg->username, refusal_emoji[esp_random() % REFUSAL_EMOJIS]); // msg->username contains the unauthorized credential
 
     // configure HTTP client
