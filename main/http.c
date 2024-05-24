@@ -12,38 +12,36 @@
 
 #define TAG "http"
 
-// urlencoded string constants
-#define ENTRY_ATTEMPT "%D0%9F%D0%BE%D0%BF%D1%8B%D1%82%D0%BA%D0%B0%20%D0%B2%D1%85%D0%BE%D0%B4%D0%B0%3A%20" // "Попытка входа: "
-#define TO_SPACE      "%20%D0%B2%20%D1%81%D0%BF%D0%B5%D0%B9%D1%81" // " в спейс"
-
 extern const char tg_api_root[] asm("_binary_tg_api_root_pem_start");
 static const char* gendered_verb_table[] = {
-    "%D0%B2%D0%BE%D1%88%D1%91%D0%BB", // вошёл
-    "%D0%B2%D0%BE%D1%88%D0%BB%D0%BE", // вошло
-    "%D0%B2%D0%BE%D1%88%D0%BB%D0%B0", // вошла
-    "%D0%B2%D0%BE%D1%88%D0%BB%D0%B8", // вошли
+    "вошёл", "вошло", "вошла", "вошли",
 };
 static const char* entry_emoji[] = {
-    "%F0%9F%91%8B", // 👋
-    "%F0%9F%91%80", // 👀
-    "%F0%9F%98%B3", // 😳
-    "%F0%9F%A4%AD", // 🤭
-    "%F0%9F%98%B0", // 😰
-    "%F0%9F%99%82", // 🙂
-    "%E2%9D%A4%EF%B8%8F", // ❤️
+    "👋", "👀", "😳", "🤭", "😰", "🙂", "❤️",
 };
 #define ENTRY_EMOJIS (sizeof(entry_emoji) / sizeof(char*))
 static const char* refusal_emoji[] = {
-    "%F0%9F%A4%AC", // 🤬
-    "%F0%9F%98%A4", // 😤
-    "%F0%9F%A7%90", // 🧐
-    "%F0%9F%A4%A8", // 🤨
-    "%F0%9F%A4%9B", // 🤛
-    "%F0%9F%96%95", // 🖕
+    "🤬", "😤", "🧐", "🤨", "🤛", "🖕",
 };
 #define REFUSAL_EMOJIS (sizeof(refusal_emoji) / sizeof(char*))
 
 QueueHandle_t http_queue;
+
+static uint32_t _http_urlencode(char* output, const char* input) {
+    uint32_t pos = 0;
+    char byte = 0;
+
+    while((byte = *(input++))) {
+        bool is_allowed = (byte >= 'A' && byte <= 'Z')
+                       || (byte >= 'a' && byte <= 'z')
+                       || (byte >= '0' && byte <= '9')
+                       || byte == '_' || byte == '.' || byte == '-';
+        pos += sprintf(output + pos, is_allowed ? "%c" : "%%%02X", byte);
+    }
+
+    *(output + pos) = 0;
+    return pos;
+}
 
 static esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
     return ESP_OK;
@@ -76,16 +74,24 @@ static esp_err_t _http_hass_log_entry(http_message_t* msg) {
 }
 
 static esp_err_t _http_tg_log_entry(http_message_t* msg) {
-    // format URL
-    char path[100], query[300];
+    // format path
+    char path[128];
     sprintf(path, "/bot%s/sendMessage", TG_KEY);
-    if(msg->type == http_message_type_entry)
-        sprintf(query, "chat_id=%s&disable_web_page_preview=true&parse_mode=HTML&text=%%3Ca%%20href%%3D%%22t.me%%2F%s%%22%%3E%s%%3C%%2Fa%%3E%%20%s%s%%20%s",
-            TG_CHAT_ID, msg->username, msg->username, gendered_verb_table[msg->gender], TO_SPACE,
-            entry_emoji[esp_random() % ENTRY_EMOJIS]);
-    else
-        sprintf(query, "chat_id=%s&disable_web_page_preview=true&parse_mode=MarkdownV2&text=%s%s%%20%s",
-            TG_CHAT_ID, ENTRY_ATTEMPT, msg->username, refusal_emoji[esp_random() % REFUSAL_EMOJIS]); // msg->username contains the unauthorized credential
+
+    // format text that will then be urlencoded into the query
+    char text[128];
+    if(msg->type == http_message_type_entry) {
+        const char* emoji = entry_emoji[esp_random() % ENTRY_EMOJIS];
+        sprintf(text, "<a href=\"t.me/%s\">@%s</a> %s в спейс %s", msg->username, msg->username, gendered_verb_table[msg->gender], emoji);
+    } else {
+        const char* emoji = refusal_emoji[esp_random() % ENTRY_EMOJIS];
+        sprintf(text, "Попытка входа: %s %s", msg->username, emoji); // "username" contains the refused credential in this case
+    }
+
+    // format query
+    char query[512];
+    uint32_t offs = sprintf(query, "chat_id=%s&disable_web_page_preview=true&parse_mode=HTML&text=", TG_CHAT_ID);
+    _http_urlencode(query + offs, text);
 
     // configure HTTP client
     esp_http_client_config_t config = {

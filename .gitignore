@@ -1,10 +1,9 @@
 main/include/secrets.h
 /build
+/keys
 /.vscode
 /sdkconfig.old
 /managed_components
 /bracket.stl
 /bracket.gcode
-/flash_key.bin
-/signing_key.pem
 /bot_logo.png

@@ -74,7 +74,8 @@ void nfc_task(void* _arg){
         }
 
         // scan card
-        uint8_t success = pn532_readPassiveTargetID(&nfc, PN532_MIFARE_ISO14443A, data_buf, &uid_len, 100);
+        uint8_t success = pn532_readPassiveTargetID(&nfc, PN532_MIFARE_ISO14443A, data_buf, &uid_len, 1000);
+        ESP_LOGD(TAG, "%d", success);
         if(!success)
             continue;
 
