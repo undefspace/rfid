@@ -17,6 +17,7 @@
 #include "secrets.h"
 #include "config.h"
 #include "http.h"
+#include "led_task.h"
 
 // declarations
 void app_main(void);
@@ -59,10 +60,12 @@ void nfc_task(void* _arg){
     while(1) {
         // (re-)init
         if(esp_timer_get_time() - last_restart >= NFC_REINIT_PERIOD) {
+            led_set_status(led_status_wait);
             ESP_LOGD(TAG, "initializing PN532");
             pn532_begin(&nfc);
             uint32_t version = pn532_getFirmwareVersion(&nfc);
             if (!version) {
+                led_set_status(led_status_error);
                 ESP_LOGE(TAG, "failed to communicate with PN532. retrying in 5s");
                 vTaskDelay(5000 / portTICK_PERIOD_MS);
                 continue;
@@ -71,6 +74,7 @@ void nfc_task(void* _arg){
             ESP_LOGD(TAG, "firmware ver. %d.%d", (version >> 16) & 0xFF, (version >> 8) & 0xFF);
             pn532_SAMConfig(&nfc);
             last_restart = esp_timer_get_time();
+            led_set_status(led_status_idle);
         }
 
         // scan card
@@ -153,9 +157,11 @@ void app_main(void) {
     // start tasks
     auth_init();
     http_init();
+    led_init();
     xTaskCreate(&nfc_task, "nfc", 2048, NULL, 4, NULL);
     xTaskCreate(&auth_task, "auth", 2048, NULL, 4, NULL);
     xTaskCreate(&http_task, "http", 4096, NULL, 4, NULL);
+    xTaskCreate(&led_task, "led", 2048, NULL, 4, NULL);
 
     // print RSSI every minute
     while(1) {

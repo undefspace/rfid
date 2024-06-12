@@ -14,6 +14,7 @@
 #include "common.h"
 #include "auth.h"
 #include "http.h"
+#include "led_task.h"
 
 #define TAG "auth"
 
@@ -264,9 +265,11 @@ void auth_task(void* _arg) {
             xQueueSend(http_queue, &msg, portMAX_DELAY);
 
             // open door
+            led_set_status(led_status_granted);
             gpio_set_level(DOOR_RELAY, 1);
             vTaskDelay(OPEN_DOOR_FOR);
             gpio_set_level(DOOR_RELAY, 0);
+            led_set_status(led_status_idle);
         } else if(err == ESP_ERR_NVS_NOT_FOUND) {
             // unknown credential: send notifications
             http_message_t msg = {
@@ -274,6 +277,10 @@ void auth_task(void* _arg) {
             };
             strcpy(msg.username, credential);
             xQueueSend(http_queue, &msg, portMAX_DELAY);
+
+            led_set_status(led_status_refused);
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+            led_set_status(led_status_idle);
         } else {
             ESP_ERROR_CHECK(err);
         }

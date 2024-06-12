@@ -11,6 +11,7 @@
 #define PN532_MOSI 6
 #define PN532_SS   7
 #define PN532_RST  9   // note: RSTPD_N, not RSTO
+#define LED_PIN    8
 #define DOOR_RELAY 10
 
 #define SCAN_TIMEOUT       (5LL * 1000 * 1000) // uS
