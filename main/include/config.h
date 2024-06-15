@@ -6,6 +6,8 @@
 #define TZ          "GMT-3"
 #define HASS_SERVER "undef:8123"
 
+#define IR_LED     3
+#define IR_PHOTOTR 2
 #define PN532_SCK  4
 #define PN532_MISO 5
 #define PN532_MOSI 6
@@ -18,5 +20,6 @@
 #define REPL_LOGON_TIMEOUT (5LL * 60 * 1000 * 1000) // uS
 #define NFC_REINIT_PERIOD  (3600LL * 1000 * 1000) // uS
 #define OPEN_DOOR_FOR      (5000 / portTICK_PERIOD_MS)
+#define LATCH_REJECT       (500LL * 1000) // uS
 
 #define HTTP_TRIES         3

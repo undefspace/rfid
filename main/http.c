@@ -24,6 +24,9 @@ static const char* refusal_emoji[] = {
     "🤬", "😤", "🧐", "🤨", "🤛", "🖕",
 };
 #define REFUSAL_EMOJIS (sizeof(refusal_emoji) / sizeof(char*))
+static const char* latch_emoji[] = {
+    "🔴", "🟢",
+};
 
 QueueHandle_t http_queue;
 
@@ -47,13 +50,15 @@ static esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
     return ESP_OK;
 }
 
-static esp_err_t _http_hass_log_entry(http_message_t* msg) {
+static esp_err_t _http_hass_log(http_message_t* msg) {
     // format JSON
     char post_data[300];
     if(msg->type == http_message_type_entry)
         sprintf(post_data, "{\"name\": \"Open Ring 1\", \"message\": \"triggered by %s's card\", \"domain\": \"lock\", \"entity_id\": \"button.open_ring_1\"}", msg->username);
-    else
-        sprintf(post_data, "{\"name\": \"Open Ring 1\", \"message\": \"denied: %s\", \"domain\": \"lock\", \"entity_id\": \"button.open_ring_1\"}", msg->username); // contains the unauthorized credential
+    else if(msg->type == http_message_type_fail)
+        sprintf(post_data, "{\"name\": \"Open Ring 1\", \"message\": \"denied: %s\", \"domain\": \"lock\", \"entity_id\": \"button.open_ring_1\"}", msg->rejected_credential);
+    else if(msg->type == http_message_type_latch)
+        return ESP_OK;
 
     // configure HTTP client
     esp_http_client_config_t config = {
@@ -73,7 +78,7 @@ static esp_err_t _http_hass_log_entry(http_message_t* msg) {
     return ESP_OK;
 }
 
-static esp_err_t _http_tg_log_entry(http_message_t* msg) {
+static esp_err_t _http_tg_log(http_message_t* msg) {
     // format path
     char path[128];
     sprintf(path, "/bot%s/sendMessage", TG_KEY);
@@ -83,9 +88,11 @@ static esp_err_t _http_tg_log_entry(http_message_t* msg) {
     if(msg->type == http_message_type_entry) {
         const char* emoji = entry_emoji[esp_random() % ENTRY_EMOJIS];
         sprintf(text, "<a href=\"t.me/%s\">@%s</a> %s в спейс %s", msg->username, msg->username, gendered_verb_table[msg->gender], emoji);
-    } else {
+    } else if(msg->type == http_message_type_fail) {
         const char* emoji = refusal_emoji[esp_random() % ENTRY_EMOJIS];
-        sprintf(text, "Попытка входа: %s %s", msg->username, emoji); // "username" contains the refused credential in this case
+        sprintf(text, "Попытка входа: %s %s", msg->rejected_credential, emoji);
+    } else if(msg->type == http_message_type_latch) {
+        sprintf(text, "%s Задвижка теперь <b>%s</b>", latch_emoji[msg->latch_open], msg->latch_open ? "открыта" : "закрыта");
     }
 
     // format query
@@ -122,12 +129,12 @@ void http_task(void* _arg) {
         // send HTTP requests
         for(int i = 0; i < HTTP_TRIES; i++) {
             ESP_LOGD(TAG, "hass: attempt %d", i + 1);
-            if(_http_hass_log_entry(&msg) == ESP_OK)
+            if(_http_hass_log(&msg) == ESP_OK)
                 break;
         }
         for(int i = 0; i < HTTP_TRIES; i++) {
             ESP_LOGD(TAG, "tg: attempt %d", i + 1);
-            if(_http_tg_log_entry(&msg) == ESP_OK)
+            if(_http_tg_log(&msg) == ESP_OK)
                 break;
         }
     }

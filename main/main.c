@@ -18,6 +18,7 @@
 #include "config.h"
 #include "http.h"
 #include "led_task.h"
+#include "latch.h"
 
 // declarations
 void app_main(void);
@@ -154,20 +155,24 @@ void app_main(void) {
     esp_sntp_config_t sntp_config = ESP_NETIF_SNTP_DEFAULT_CONFIG(NTP_SERVER);
     esp_netif_sntp_init(&sntp_config);
 
-    // start tasks
+    // launch tasks
     auth_init();
     http_init();
     led_init();
-    xTaskCreate(&nfc_task, "nfc", 2048, NULL, 4, NULL);
-    xTaskCreate(&auth_task, "auth", 2048, NULL, 4, NULL);
+    latch_init();
+    xTaskCreate(&nfc_task, "nfc", 2048, NULL, 10, NULL);
+    xTaskCreate(&auth_task, "auth", 2048, NULL, 9, NULL);
     xTaskCreate(&http_task, "http", 4096, NULL, 4, NULL);
-    xTaskCreate(&led_task, "led", 2048, NULL, 4, NULL);
+    xTaskCreate(&led_task, "led", 4096, NULL, 8, NULL);
 
-    // print RSSI every minute
+    // print RSSI and memory stats every minute
     while(1) {
         wifi_ap_record_t ap;
         esp_wifi_sta_get_ap_info(&ap);
         ESP_LOGD(TAG, "RSSI: %d dBm", ap.rssi);
+
+        heap_caps_print_heap_info(MALLOC_CAP_DEFAULT);
+
         vTaskDelay(60000 / portTICK_PERIOD_MS);
     }
 }

@@ -275,7 +275,7 @@ void auth_task(void* _arg) {
             http_message_t msg = {
                 .type = http_message_type_fail,
             };
-            strcpy(msg.username, credential);
+            strcpy(msg.rejected_credential, credential);
             xQueueSend(http_queue, &msg, portMAX_DELAY);
 
             led_set_status(led_status_refused);
